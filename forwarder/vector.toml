@@ -1,0 +1,35 @@
+# Change this to use a non-default directory for Vector data storage:
+data_dir = "~/vector/data"
+
+# Random Syslog-formatted logs 
+[sources.dummy_logs]
+type = "demo_logs"
+format = "syslog"
+interval = 1
+
+# Parse Syslog logs
+# See the Vector Remap Language reference for more info: https://vrl.dev
+# Conversts syslog into JSON formatted events
+[transforms.parse_logs]
+type = "remap"
+inputs = ["dummy_logs"]
+source = '''
+. = parse_syslog!(string!(.message))
+'''
+
+# Print parsed logs to stdout - can comment out or remove as this is just for 
+# debugging purposes
+#[sinks.print]
+#type = "console"
+#inputs = ["parse_logs"]
+#encoding.codec = "json"
+
+# Observe Sink - Sends to Observe's http endpoint
+[sinks.observe]
+type = "http"
+inputs = [ "parse_logs" ]
+encoding.codec = "json"
+compression = "gzip"
+uri = "https://[Observe Customer ID].collect.observe.com/v1/http"
+auth.strategy = "bearer"
+auth.token = "[Datastream Token]"
